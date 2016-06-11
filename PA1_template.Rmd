@@ -1,25 +1,98 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
+title: 'Reproducible Research: Peer Assessment 1'
+author: "Muhammad Sadiq"
+date: "June 11, 2016"
 output: 
   html_document:
     keep_md: true
 ---
-
+```{r}
+library("dplyr")
+library(lattice)
+```
 
 ## Loading and preprocessing the data
 
-
+```{r}
+setwd("C:/Users/muhammad.sadiq/Documents")
+data<-read.csv("activity.csv", na.strings = "NA")
+head(data,2)
+```
+Checking the class of date
+```{r}
+class(data$date)
+```
+Converting date to date object
+```{r}
+data$date<-as.Date(data$date, format = "%Y-%m-%d")
+class(data$date)
+```
+Checking the class of Interval
+```{r}
+class(data$interval)
+```
+Converting Interval class to factor
+```{r}
+data$interval<-factor(data$interval)
+class(data$interval)
+```
 
 ## What is mean total number of steps taken per day?
+Remove "NA" from steps column
+```{r}
+cdata<-data[!is.na(data[,1]),]
+head(cdata)
 
-
+```
+Following compute the mean number of steps on daily basis
+```{r}
+agg<-aggregate(steps~date, data = cdata, mean)
+head(agg)
+```
 
 ## What is the average daily activity pattern?
 
-
+```{r}
+hist(as.numeric(agg$steps), breaks = 20, col = "red", xlab = "Number of Steps", main= "Histogram of the total number of steps taken each day")
+```
 
 ## Imputing missing values
-
-
+It is assumed that "NA" for steps means no step so we replacing it with "0".
+```{r}
+idata<-data
+idata[is.na(idata)]<-0
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+Factoring Days
+```{r}
+idata$day <- as.factor(weekdays(idata$date))
+str(idata$day)
+```
+Identifying Week day and weekends
+```{r}
+idata$week_day <- ifelse(!(idata$day %in% c("Saturday","Sunday")), TRUE, FALSE) 
+```
+Computing mean on weekdays
+```{r}
+weekdays_data <- idata[idata$week_day,]
+steps_per_interval_weekdays <-aggregate(weekdays_data$steps,by=list(interval=weekdays_data$interval), FUN=mean)
+```
+Computing mean on week ends
+```{r}
+weekends_data <- idata[!idata$week_day,]
+steps_per_interval_weekends <- aggregate(weekends_data$steps, by=list(interval=weekends_data$interval), FUN=mean)
+```
+Formatting and combining data
+```{r}
+colnames(steps_per_interval_weekdays) <- c("interval", "average_steps")
+colnames(steps_per_interval_weekends) <- c("interval", "average_steps")
+steps_per_interval_weekdays$day <- "Weekday"
+steps_per_interval_weekends$day <- "Weekend"
+week_data <- rbind(steps_per_interval_weekends, steps_per_interval_weekdays)
+week_data$day <- as.factor(week_data$day)
+```
+Plotting the data
+```{r}
+xyplot(average_steps ~  interval | day, data = week_data, layout = c(1,2), type ="l", ylab="Number of Steps")
+```
