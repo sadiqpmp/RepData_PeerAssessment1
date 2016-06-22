@@ -96,3 +96,4 @@ Plotting the data
 ```{r}
 xyplot(average_steps ~  interval | day, data = week_data, layout = c(1,2), type ="l", ylab="Number of Steps")
 ```
+
